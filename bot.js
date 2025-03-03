@@ -36,6 +36,39 @@ bot.command("inline", (ctx) => {
   });
 });
 
+// 📌 Генерація інвойсу для Telegram Stars
+bot.command("pay", async (ctx) => {
+  try {
+    await ctx.replyWithInvoice({
+      title: "Придбання зірок",
+      description: "Це тестовий опис товару",
+      payload: "purchase-stars",
+      provider_token: "", // Telegram Stars не потребує provider_token
+      currency: "XTR", // Telegram Stars
+      prices: [{ amount: 10, label: "10 Stars" }],
+    });
+  } catch (error) {
+    console.error("❌ Помилка створення інвойсу:", error);
+    ctx.reply("❌ Виникла помилка при створенні інвойсу.");
+  }
+});
+
+// 📌 Обробка `pre_checkout_query` (Telegram вимагає відповіді перед оплатою)
+bot.on("pre_checkout_query", async (ctx) => {
+  try {
+    await ctx.answerPreCheckoutQuery(true);
+  } catch (error) {
+    console.error("❌ Помилка підтвердження оплати:", error);
+  }
+});
+
+// 📌 Обробка успішного платежу
+bot.on("message", async (ctx) => {
+  if (ctx.message.successful_payment) {
+    console.log("✅ Оплата успішна:", ctx.message.successful_payment);
+    ctx.reply("🎉 Дякуємо за покупку! Ваші зірочки будуть зараховані.");
+  }
+});
 
 // 📌 Запуск бота
 bot.launch()
