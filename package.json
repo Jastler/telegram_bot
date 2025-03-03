@@ -4,10 +4,11 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node bot.js",
-    "dev": "nodemon bot.js"
+    "start": "concurrently \"node bot.js\" \"node server.js\"",
+    "dev": "concurrently \"nodemon bot.js\" \"nodemon server.js\""
   },
   "dependencies": {
+    "concurrently": "^9.1.2",
     "dotenv": "^16.4.7",
     "telegraf": "^4.16.3"
   },
