@@ -1,6 +1,5 @@
 require("dotenv").config();
 const { Telegraf } = require("telegraf");
-const { setupPayments } = require("./payments"); // Підключаємо payments.js
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
