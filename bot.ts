@@ -41,11 +41,11 @@ bot.action("buy_product", async (ctx) => {
 bot.on("pre_checkout_query", (ctx) => ctx.answerPreCheckoutQuery(true));
 
 // Успішна оплата
-bot.on("successful_payment", async (ctx) => {
-  console.log("💸 Payment successful:", ctx.message.successful_payment);
-  await ctx.reply(
-    "Thank you for your purchase! 🎉 Your premium access is now active."
-  );
-});
+// bot.on("successful_payment", async (ctx) => {
+//   console.log("💸 Payment successful:", ctx.message.successful_payment);
+//   await ctx.reply(
+//     "Thank you for your purchase! 🎉 Your premium access is now active."
+//   );
+// });
 
 bot.launch().then(() => console.log("🚀 Bot started"));
