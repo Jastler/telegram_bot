@@ -7,45 +7,24 @@ const bot = new Telegraf(process.env.BOT_TOKEN!);
 
 // Користувач запускає бота
 bot.start((ctx) => {
-  ctx.reply(
-    "📢 Welcome! Tap the button below to buy the premium character using Telegram Stars ⭐",
-    {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "Buy with Stars ⭐", callback_data: "buy_product" }],
-        ],
-      },
-    }
-  );
+  ctx.reply("📢 Привіт! Натисни кнопку нижче, щоб запустити додаток", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "Launch Mini App", callback_data: "launch_app" }], // Одна кнопка Launch
+      ],
+    },
+  });
 });
 
 // Обробка натискання кнопки
-bot.action("buy_product", async (ctx) => {
-  try {
-    await ctx.replyWithInvoice({
-      title: "Premium Character",
-      description: "Unlock exclusive character access",
-      payload: "premium_character_001",
-      provider_token: "telegram",
-      currency: "XTR",
-      prices: [{ label: "Premium", amount: 1 }],
-      start_parameter: "buy_premium_access",
-    });
-  } catch (err) {
-    console.error("Invoice error:", err);
-    ctx.reply("Sorry, something went wrong creating the invoice.");
-  }
+bot.action("launch_app", (ctx) => {
+  // Тепер Telegram має підтримку відкриття Web App через deep link
+  const webAppLink = "https://your-mini-app-link"; // Замініть на ваш URL Web App
+  ctx.reply(
+    `Для запуску додатка натисніть на це посилання: [Launch Mini App](${webAppLink})`,
+    { parse_mode: "Markdown" }
+  );
 });
 
-// Підтвердження payment-ready запиту
-bot.on("pre_checkout_query", (ctx) => ctx.answerPreCheckoutQuery(true));
-
-// Успішна оплата
-// bot.on("successful_payment", async (ctx) => {
-//   console.log("💸 Payment successful:", ctx.message.successful_payment);
-//   await ctx.reply(
-//     "Thank you for your purchase! 🎉 Your premium access is now active."
-//   );
-// });
-
-bot.launch().then(() => console.log("🚀 Bot started"));
+// Запуск
+bot.launch().then(() => console.log("🚀 Бот запущено"));
