@@ -19,7 +19,7 @@ bot.start((ctx) => {
 // Обробка натискання кнопки
 bot.action("launch_app", (ctx) => {
   // Тепер Telegram має підтримку відкриття Web App через deep link
-  const webAppLink = "https://your-mini-app-link"; // Замініть на ваш URL Web App
+  const webAppLink = "https://capsula.dev/lovecraft.ai/#/"; // Замініть на ваш URL Web App
   ctx.reply(
     `Для запуску додатка натисніть на це посилання: [Launch Mini App](${webAppLink})`,
     { parse_mode: "Markdown" }
