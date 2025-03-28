@@ -5,26 +5,26 @@ import { Telegraf } from "telegraf";
 
 const bot = new Telegraf(process.env.BOT_TOKEN!);
 
-// Користувач запускає бота
+// User starts the bot
 bot.start((ctx) => {
-  ctx.reply("📢 Привіт! Натисни кнопку нижче, щоб запустити додаток", {
+  ctx.reply("📢 Hello! Click the button below to launch the app", {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "Launch Mini App", callback_data: "launch_app" }], // Одна кнопка Launch
+        [{ text: "Launch Mini App", callback_data: "launch_app" }], // Single Launch button
       ],
     },
   });
 });
 
-// Обробка натискання кнопки
+// Handle button click
 bot.action("launch_app", (ctx) => {
-  // Тепер Telegram має підтримку відкриття Web App через deep link
-  const webAppLink = "https://capsula.dev/lovecraft.ai/#/"; // Замініть на ваш URL Web App
+  // Telegram now supports opening Web App via deep link
+  const webAppLink = "https://capsula.dev/lovecraft.ai/#/"; // Replace with your Web App URL
   ctx.reply(
-    `Для запуску додатка натисніть на це посилання: [Launch Mini App](${webAppLink})`,
+    `To launch the app, click this link: [Launch Mini App](${webAppLink})`,
     { parse_mode: "Markdown" }
   );
 });
 
-// Запуск
-bot.launch().then(() => console.log("🚀 Бот запущено"));
+// Launch
+bot.launch().then(() => console.log("🚀 Bot started"));
