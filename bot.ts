@@ -7,16 +7,33 @@ const bot = new Telegraf(process.env.BOT_TOKEN!);
 
 const miniAppUrl = `https://capsula.dev/lovecraft.ai/`;
 
-bot.start((ctx) => {
-  // передача initData через URL
+bot.start(async (ctx) => {
+  const welcomeMessage = `
+🌟 *Charmify – Create Your Perfect AI Companion!*
 
-  ctx.reply("📢 Welcome! Tap the button below to launch the Mini App:", {
+✨ Create unique AI characters with personalities you’ll love. Chat, connect, and explore exciting stories together.
+
+🎭 *Choose your AI companion:*
+- 👩 AI Girlfriends
+- 👨 AI Boyfriends
+- 🎌 Anime Characters
+
+💖 *Your ideal character awaits!*
+Tap below to start your journey.
+  `;
+
+  const imageUrl =
+    "https://firebasestorage.googleapis.com/v0/b/charmify-e7acc.firebasestorage.app/o/bot%2Fphoto_2025-04-14%2012.30.57%20(1).jpeg?alt=media&token=b9438ff2-683f-4ae0-a76d-ba5696354727";
+
+  await ctx.replyWithPhoto(imageUrl, {
+    caption: welcomeMessage,
+    parse_mode: "Markdown",
     reply_markup: {
       inline_keyboard: [
         [
           {
-            text: "Launch app", // Текст кнопки
-            web_app: { url: miniAppUrl }, // Відкриває ваш Mini App за URL
+            text: "🚀 Launch app",
+            web_app: { url: miniAppUrl },
           },
         ],
       ],
@@ -30,7 +47,7 @@ bot.command("launch", (ctx) => {
       inline_keyboard: [
         [
           {
-            text: "Launch app",
+            text: "🚀 Launch app",
             web_app: { url: miniAppUrl },
           },
         ],
