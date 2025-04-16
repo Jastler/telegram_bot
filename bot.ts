@@ -3,15 +3,14 @@ config();
 
 import { Telegraf } from "telegraf";
 import axios from "axios";
+import {
+  SUBSCRIPTION_WEBHOOK,
+  LOG_SUBSCRIPTION_FAILURE_URL,
+  SUBSCRIPTION_API_KEY,
+  miniAppUrl,
+} from "./const";
 
 const bot = new Telegraf(process.env.BOT_TOKEN!);
-
-const miniAppUrl = `https://capsula.dev/lovecraft.ai/`;
-
-const SUBSCRIPTION_WEBHOOK =
-  "https://handlesuccessfulsubscription-n6fvvwntkq-uc.a.run.app";
-
-const SUBSCRIPTION_API_KEY = process.env.SUBSCRIPTION_API_KEY!;
 
 bot.start(async (ctx) => {
   const welcomeMessage = `
@@ -58,21 +57,30 @@ bot.on("pre_checkout_query", (ctx) => ctx.answerPreCheckoutQuery(true));
 // ✅ Обробка успішного платежу
 bot.on("message", async (ctx) => {
   const msg = ctx.message as any;
+  const payment = msg?.successful_payment;
 
-  if (!msg?.successful_payment) return;
+  if (!payment) return;
 
-  const { payload } = msg.successful_payment;
-  const userId = ctx.from?.id?.toString();
+  const userId = `telegram:${ctx.from?.id}`;
+  const payload = payment.payload || "unknown";
+  const plan = payload.includes("subscription") ? "monthly" : "unknown";
+  const days = 30;
 
-  if (!userId || !payload?.startsWith("subscription_")) return;
+  const fallbackLog = {
+    userId,
+    payload,
+    date: new Date().toISOString(),
+  };
+
+  console.log("✅ Successful payment:", fallbackLog);
 
   try {
-    await axios.post(
+    const response = await axios.post(
       SUBSCRIPTION_WEBHOOK,
       {
         userId,
-        plan: "monthly",
-        days: 30,
+        plan,
+        days,
       },
       {
         headers: {
@@ -81,12 +89,16 @@ bot.on("message", async (ctx) => {
       }
     );
 
-    console.log(`✅ Subscription saved for user ${userId}`);
+    console.log("✅ Subscription saved:", response.data);
   } catch (err: any) {
-    console.error(
-      "❌ Failed to notify backend about subscription:",
-      err.message
-    );
+    console.error("❌ Failed to notify backend:", err.message);
+
+    try {
+      await axios.post(LOG_SUBSCRIPTION_FAILURE_URL, fallbackLog);
+      console.log("📦 Logged fallback data");
+    } catch (logErr: any) {
+      console.error("🚨 Failed to log fallback:", logErr.message);
+    }
   }
 });
 
