@@ -11,7 +11,7 @@ const miniAppUrl = `https://capsula.dev/lovecraft.ai/`;
 
 // 🔗 URL до Cloud Function, яка зберігає підписку
 const SUBSCRIPTION_WEBHOOK =
-  "https://<your-region>-<project-id>.cloudfunctions.net/handleSuccessfulSubscription";
+  "https://us-central1-charmify-e7acc.cloudfunctions.net/handleSuccessfulSubscription";
 
 bot.start(async (ctx) => {
   const welcomeMessage = `
