@@ -61,6 +61,12 @@ bot.on("message", async (ctx) => {
 
   if (!payment) return;
 
+  console.log("🧾 PAYMENT PAYLOAD:", {
+    rawUserId: ctx.from?.id,
+    finalUserId: `telegram:${ctx.from?.id}`,
+    payload: payment.payload,
+  });
+
   const userId = `telegram:${ctx.from?.id}`;
   const payload = payment.payload || "unknown";
   const plan = payload.includes("subscription") ? "monthly" : "unknown";
