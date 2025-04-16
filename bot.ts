@@ -6,12 +6,12 @@ import axios from "axios";
 
 const bot = new Telegraf(process.env.BOT_TOKEN!);
 
-// 🔗 Посилання на твоє Mini App
 const miniAppUrl = `https://capsula.dev/lovecraft.ai/`;
 
-// 🔗 URL до Cloud Function, яка зберігає підписку
 const SUBSCRIPTION_WEBHOOK =
-  "https://us-central1-charmify-e7acc.cloudfunctions.net/handleSuccessfulSubscription";
+  "https://handlesuccessfulsubscription-n6fvvwntkq-uc.a.run.app";
+
+const SUBSCRIPTION_API_KEY = process.env.SUBSCRIPTION_API_KEY!;
 
 bot.start(async (ctx) => {
   const welcomeMessage = `
@@ -52,33 +52,41 @@ bot.command("launch", (ctx) => {
   });
 });
 
-// 🔐 Telegram payment flow
+// ✅ Обробка pre-checkout
 bot.on("pre_checkout_query", (ctx) => ctx.answerPreCheckoutQuery(true));
 
-// ✅ Обробка успішної оплати (без застарілих методів)
+// ✅ Обробка успішного платежу
 bot.on("message", async (ctx) => {
   const msg = ctx.message as any;
 
-  if (msg?.successful_payment) {
-    const { payload } = msg.successful_payment;
-    const userId = ctx.from?.id?.toString();
+  if (!msg?.successful_payment) return;
 
-    if (!userId || !payload?.startsWith("subscription_")) return;
+  const { payload } = msg.successful_payment;
+  const userId = ctx.from?.id?.toString();
 
-    try {
-      await axios.post(SUBSCRIPTION_WEBHOOK, {
+  if (!userId || !payload?.startsWith("subscription_")) return;
+
+  try {
+    await axios.post(
+      SUBSCRIPTION_WEBHOOK,
+      {
         userId,
         plan: "monthly",
         days: 30,
-      });
+      },
+      {
+        headers: {
+          "x-api-key": SUBSCRIPTION_API_KEY,
+        },
+      }
+    );
 
-      console.log(`✅ Subscription saved for user ${userId}`);
-    } catch (err: any) {
-      console.error(
-        "❌ Failed to notify backend about subscription:",
-        err.message
-      );
-    }
+    console.log(`✅ Subscription saved for user ${userId}`);
+  } catch (err: any) {
+    console.error(
+      "❌ Failed to notify backend about subscription:",
+      err.message
+    );
   }
 });
 
