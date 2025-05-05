@@ -3,6 +3,8 @@ config();
 
 import { Telegraf } from "telegraf";
 import axios from "axios";
+import Bottleneck from "bottleneck";
+import admin from "firebase-admin";
 import {
   SUBSCRIPTION_WEBHOOK,
   LOG_SUBSCRIPTION_FAILURE_URL,
@@ -10,10 +12,29 @@ import {
   miniAppUrl,
 } from "./const";
 
+if (!process.env.FIREBASE_SERVICE_ACCOUNT)
+  throw new Error("FIREBASE_SERVICE_ACCOUNT missing");
+const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+sa.private_key = sa.private_key.replace(/\\n/g, "\n");
+admin.initializeApp({ credential: admin.credential.cert(sa) });
+export const db = admin.firestore();
+
 const bot = new Telegraf(process.env.BOT_TOKEN!);
+const ADMIN_ID = Number(process.env.ADMIN_ID);
 
 bot.start(async (ctx) => {
-  const welcomeMessage = `
+  await db.doc(`users/telegram:${ctx.from.id}`).set(
+    {
+      allows_write_to_pm: true,
+      first_name: ctx.from.first_name,
+      last_name: ctx.from.last_name ?? "",
+      language_code: ctx.from.language_code ?? "en",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  const welcome = `
 🌟 *Charmify – Create Your Perfect AI Companion!*
 
 ✨ Create unique AI characters with personalities you’ll love. Chat, connect, and explore exciting stories together.
@@ -25,13 +46,13 @@ bot.start(async (ctx) => {
 
 💖 *Your ideal character awaits!*
 Tap below to start your journey.
-  `;
+`;
 
-  const imageUrl =
+  const img =
     "https://firebasestorage.googleapis.com/v0/b/charmify-e7acc.firebasestorage.app/o/bot%2Fphoto_2025-04-14%2012.30.57%20(1).jpeg?alt=media&token=b9438ff2-683f-4ae0-a76d-ba5696354727";
 
-  await ctx.replyWithPhoto(imageUrl, {
-    caption: welcomeMessage,
+  await ctx.replyWithPhoto(img, {
+    caption: welcome,
     parse_mode: "Markdown",
     reply_markup: {
       inline_keyboard: [
@@ -41,71 +62,132 @@ Tap below to start your journey.
   });
 });
 
-bot.command("launch", (ctx) => {
+bot.command("launch", (ctx) =>
   ctx.reply("🔄 Launching your Mini App...", {
     reply_markup: {
       inline_keyboard: [
         [{ text: "🚀 Launch app", web_app: { url: miniAppUrl } }],
       ],
     },
-  });
-});
+  })
+);
 
-// ✅ Обробка pre-checkout
-bot.on("pre_checkout_query", (ctx) => ctx.answerPreCheckoutQuery(true));
+bot.command("ping", (ctx) => ctx.reply("pong"));
 
-// ✅ Обробка успішного платежу
-bot.on("message", async (ctx) => {
-  const msg = ctx.message as any;
-  const payment = msg?.successful_payment;
+const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 50 });
 
-  if (!payment) return;
+bot.command("broadcast", async (ctx) => {
+  if (ctx.from.id !== ADMIN_ID) return ctx.reply("⛔ You are not admin.");
 
-  console.log("🧾 PAYMENT PAYLOAD:", {
-    rawUserId: ctx.from?.id,
-    finalUserId: `telegram:${ctx.from?.id}`,
-    payload: payment.payload,
-  });
-
-  const userId = `telegram:${ctx.from?.id}`;
-  const payload = payment.payload || "unknown";
-  const plan = payload.includes("subscription") ? "monthly" : "unknown";
-  const days = 30;
-
-  const fallbackLog = {
-    userId,
-    payload,
-    date: new Date().toISOString(),
-  };
-
-  console.log("✅ Successful payment:", fallbackLog);
-
-  try {
-    const response = await axios.post(
-      SUBSCRIPTION_WEBHOOK,
-      {
-        userId,
-        plan,
-        days,
-      },
-      {
-        headers: {
-          "x-api-key": SUBSCRIPTION_API_KEY,
-        },
-      }
+  const raw = ctx.message.text.replace(/^\/broadcast\s*/, "");
+  const p = raw.split("|").map((s) => s.trim());
+  if (p.length < 4)
+    return ctx.reply(
+      "⚠️ Format:\n/broadcast <img> | <btnText> | <btnUrl> | <caption>"
     );
 
-    console.log("✅ Subscription saved:", response.data);
-  } catch (err: any) {
-    console.error("❌ Failed to notify backend:", err.message);
+  const [imgUrl, btnText, btnUrl, ...cap] = p;
+  const caption = cap.join("|");
 
+  const snap = await db
+    .collection("users")
+    .where("allows_write_to_pm", "==", true)
+    .select()
+    .get();
+
+  let ok = 0,
+    blocked = 0,
+    other = 0;
+
+  for (const doc of snap.docs) {
+    const tgId = doc.id.startsWith("telegram:") ? doc.id.slice(9) : doc.id;
+    limiter
+      .schedule(() =>
+        bot.telegram.sendPhoto(tgId, imgUrl, {
+          caption,
+          parse_mode: "Markdown",
+          reply_markup: { inline_keyboard: [[{ text: btnText, url: btnUrl }]] },
+        })
+      )
+      .then(() => ok++)
+      .catch(async (err) => {
+        if (err.code === 403) {
+          blocked++;
+          await doc.ref.update({ allows_write_to_pm: false });
+        } else other++;
+      });
+  }
+
+  limiter.on("idle", () =>
+    ctx.reply(
+      `✅ Broadcast done. Sent: ${ok}  Blocked: ${blocked}  Other: ${other}`
+    )
+  );
+});
+
+bot.command("promo", async (ctx) => {
+  if (ctx.from.id !== ADMIN_ID) return ctx.reply("⛔ You are not admin.");
+
+  const raw = ctx.message.text.replace(/^\/promo\s*/, "");
+  const p = raw.split("|").map((s) => s.trim());
+  if (p.length < 5)
+    return ctx.reply(
+      "⚠️ Format:\n/promo <id1,id2> | <img> | <btnText> | <btnUrl> | <caption>"
+    );
+
+  const [idsRaw, imgUrl, btnText, btnUrl, ...cap] = p;
+  const caption = cap.join("|");
+  const ids = idsRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  let ok = 0,
+    fail = 0;
+
+  for (const id of ids) {
     try {
-      await axios.post(LOG_SUBSCRIPTION_FAILURE_URL, fallbackLog);
-      console.log("📦 Logged fallback data");
-    } catch (logErr: any) {
-      console.error("🚨 Failed to log fallback:", logErr.message);
+      await bot.telegram.sendPhoto(id, imgUrl, {
+        caption,
+        parse_mode: "Markdown",
+        reply_markup: { inline_keyboard: [[{ text: btnText, url: btnUrl }]] },
+      });
+      ok++;
+    } catch (e: any) {
+      fail++;
+      console.error(`❌ ${id}`, e.description || e.message);
     }
   }
+
+  ctx.reply(`🎯 Promo finished. Sent: ${ok}, Errors: ${fail}`);
+});
+
+bot.on("pre_checkout_query", (ctx) => ctx.answerPreCheckoutQuery(true));
+
+bot.on("message", async (ctx, next) => {
+  const pay = (ctx.message as any)?.successful_payment;
+  if (pay) {
+    const userId = `telegram:${ctx.from.id}`;
+    const plan = pay.payload?.includes("subscription") ? "monthly" : "unknown";
+    const days = 30;
+
+    try {
+      await axios.post(
+        SUBSCRIPTION_WEBHOOK,
+        { userId, plan, days },
+        { headers: { "x-api-key": SUBSCRIPTION_API_KEY } }
+      );
+    } catch {
+      await axios.post(LOG_SUBSCRIPTION_FAILURE_URL, {
+        userId,
+        payload: pay.payload,
+        date: new Date().toISOString(),
+      });
+    }
+  }
+  return next();
 });
 
 bot.launch().then(() => console.log("🚀 Bot started"));
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));
