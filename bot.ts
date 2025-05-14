@@ -10,6 +10,7 @@ import {
   LOG_SUBSCRIPTION_FAILURE_URL,
   SUBSCRIPTION_API_KEY,
   miniAppUrl,
+  STARS_WEBHOOK,
 } from "./const";
 
 if (!process.env.FIREBASE_SERVICE_ACCOUNT)
@@ -165,26 +166,47 @@ bot.command("promo", async (ctx) => {
 bot.on("pre_checkout_query", (ctx) => ctx.answerPreCheckoutQuery(true));
 
 bot.on("message", async (ctx, next) => {
-  const pay = (ctx.message as any)?.successful_payment;
-  if (pay) {
-    const userId = `telegram:${ctx.from.id}`;
-    const plan = pay.payload?.includes("subscription") ? "monthly" : "unknown";
-    const days = 30;
+  const payment = (ctx.message as any)?.successful_payment;
+  if (!payment) return next();
 
-    try {
+  const payload = payment.invoice_payload;
+  const userId = `telegram:${ctx.from.id}`;
+
+  try {
+    if (payload.includes("subscription_")) {
+      const plan = "monthly";
+      const days = 30;
+
       await axios.post(
         SUBSCRIPTION_WEBHOOK,
         { userId, plan, days },
         { headers: { "x-api-key": SUBSCRIPTION_API_KEY } }
       );
-    } catch {
-      await axios.post(LOG_SUBSCRIPTION_FAILURE_URL, {
-        userId,
-        payload: pay.payload,
-        date: new Date().toISOString(),
-      });
+    } else if (payload.includes("stars_")) {
+      const parts = payload.split("_");
+      const amount = parts[1] ?? "0";
+
+      await axios.post(
+        STARS_WEBHOOK,
+        {
+          userId,
+          amount,
+          payload,
+        },
+        { headers: { "x-api-key": SUBSCRIPTION_API_KEY } }
+      );
     }
+  } catch (error) {
+    console.error("Purchase processing error:", error);
+
+    await axios.post(LOG_SUBSCRIPTION_FAILURE_URL, {
+      userId,
+      payload,
+      date: new Date().toISOString(),
+      type: payload.includes("stars_") ? "stars_purchase" : "subscription",
+    });
   }
+
   return next();
 });
 
