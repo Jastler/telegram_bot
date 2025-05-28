@@ -1,4 +1,4 @@
-export const miniAppUrl = `https://capsula.dev/lovecraft.ai/`;
+export const miniAppUrl = `https://charmify-e7acc.web.app/`;
 
 export const CLOUD_FUNCTIONS_BASE_URL =
   "https://us-central1-charmify-e7acc.cloudfunctions.net";
