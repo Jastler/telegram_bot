@@ -174,12 +174,10 @@ bot.on("message", async (ctx, next) => {
 
   try {
     if (payload.includes("subscription_")) {
-      const plan = "monthly";
-      const days = 30;
-
+      // Передаємо payload в cloud функцію, яка сама парситиме planId та встановлюватиме правильну кількість днів
       await axios.post(
         SUBSCRIPTION_WEBHOOK,
-        { userId, plan, days },
+        { userId, payload },
         { headers: { "x-api-key": SUBSCRIPTION_API_KEY } }
       );
     } else if (payload.includes("stars_")) {
