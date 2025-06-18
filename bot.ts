@@ -24,17 +24,6 @@ const bot = new Telegraf(process.env.BOT_TOKEN!);
 const ADMIN_ID = Number(process.env.ADMIN_ID);
 
 bot.start(async (ctx) => {
-  await db.doc(`users/telegram:${ctx.from.id}`).set(
-    {
-      allows_write_to_pm: true,
-      first_name: ctx.from.first_name,
-      last_name: ctx.from.last_name ?? "",
-      language_code: ctx.from.language_code ?? "en",
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    },
-    { merge: true }
-  );
-
   const welcome = `
 🌟 *Charmify – Create Your Perfect AI Companion!*
 
