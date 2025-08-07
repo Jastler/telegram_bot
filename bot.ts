@@ -12,6 +12,14 @@ import {
   miniAppUrl,
   STARS_WEBHOOK,
 } from "./const";
+import {
+  welcomeMessages,
+  SupportedLanguage,
+  unknownMessageReply,
+  referralMessages,
+  referralButtonText,
+  defaultButtonText,
+} from "./translations";
 
 if (!process.env.FIREBASE_SERVICE_ACCOUNT)
   throw new Error("FIREBASE_SERVICE_ACCOUNT missing");
@@ -23,31 +31,39 @@ export const db = admin.firestore();
 const bot = new Telegraf(process.env.BOT_TOKEN!);
 const ADMIN_ID = Number(process.env.ADMIN_ID);
 
+const IMAGES = {
+  default:
+    "https://firebasestorage.googleapis.com/v0/b/charmify-e7acc.firebasestorage.app/o/bot%2Fphoto_2025-04-14%2012.30.57%20(1).jpeg?alt=media&token=b9438ff2-683f-4ae0-a76d-ba5696354727",
+  referral:
+    "https://firebasestorage.googleapis.com/v0/b/charmify-e7acc.firebasestorage.app/o/bot%2Fphoto_2025-04-14%2012.30.57%20(1).jpeg?alt=media&token=b9438ff2-683f-4ae0-a76d-ba5696354727",
+};
+
 bot.start(async (ctx) => {
-  const welcome = `
-🌟 *Charmify – Create Your Perfect AI Companion!*
+  const lang: SupportedLanguage =
+    (ctx.from?.language_code?.split("-")[0] as SupportedLanguage) || "en";
 
-✨ Create unique AI characters with personalities you’ll love. Chat, connect, and explore exciting stories together.
+  const payload = ctx.payload;
+  const isReferral = payload?.startsWith("ref_");
+  console.log(payload, "payload");
+  console.log(isReferral, "isReferral");
+  console.log(ctx);
+  const image = isReferral ? IMAGES.referral : IMAGES.default;
 
-🎭 *Choose your AI companion:*
-- 👩 AI Girlfriends
-- 👨 AI Boyfriends
-- 🎌 Anime Characters
+  const caption = isReferral
+    ? referralMessages[lang] || referralMessages.en
+    : welcomeMessages[lang] || welcomeMessages.en;
 
-💖 *Your ideal character awaits!*
-Tap below to start your journey.
-`;
+  const buttonText = isReferral
+    ? referralButtonText[lang] || referralButtonText.en
+    : defaultButtonText[lang] || defaultButtonText.en;
 
-  const img =
-    "https://firebasestorage.googleapis.com/v0/b/charmify-e7acc.firebasestorage.app/o/bot%2Fphoto_2025-04-14%2012.30.57%20(1).jpeg?alt=media&token=b9438ff2-683f-4ae0-a76d-ba5696354727";
+  const launchUrl = payload ? `${miniAppUrl}?startapp=${payload}` : miniAppUrl;
 
-  await ctx.replyWithPhoto(img, {
-    caption: welcome,
+  await ctx.replyWithPhoto(image, {
+    caption,
     parse_mode: "Markdown",
     reply_markup: {
-      inline_keyboard: [
-        [{ text: "🚀 Launch app", web_app: { url: miniAppUrl } }],
-      ],
+      inline_keyboard: [[{ text: buttonText, web_app: { url: launchUrl } }]],
     },
   });
 });
@@ -163,7 +179,6 @@ bot.on("message", async (ctx, next) => {
 
   try {
     if (payload.includes("subscription_")) {
-      // Передаємо payload в cloud функцію, яка сама парситиме planId та встановлюватиме правильну кількість днів
       await axios.post(
         SUBSCRIPTION_WEBHOOK,
         { userId, payload },
@@ -195,6 +210,23 @@ bot.on("message", async (ctx, next) => {
   }
 
   return next();
+});
+
+bot.on("message", async (ctx) => {
+  const text = (ctx.message as any)?.text;
+  const payment = (ctx.message as any)?.successful_payment;
+
+  if (!text || text.startsWith("/") || payment) return;
+
+  const userLang = (ctx.from?.language_code?.split("-")[0] ||
+    "en") as SupportedLanguage;
+  const reply = unknownMessageReply[userLang] || unknownMessageReply.en;
+
+  await ctx.reply(reply.text, {
+    reply_markup: {
+      inline_keyboard: [[{ text: reply.button, web_app: { url: miniAppUrl } }]],
+    },
+  });
 });
 
 bot.launch().then(() => console.log("🚀 Bot started"));
