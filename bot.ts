@@ -33,9 +33,9 @@ const ADMIN_ID = Number(process.env.ADMIN_ID);
 
 const IMAGES = {
   default:
-    "https://firebasestorage.googleapis.com/v0/b/charmify-e7acc.firebasestorage.app/o/bot%2Fphoto_2025-04-14%2012.30.57%20(1).jpeg?alt=media&token=b9438ff2-683f-4ae0-a76d-ba5696354727",
+    "https://firebasestorage.googleapis.com/v0/b/charmify-e7acc.firebasestorage.app/o/bot%2Fnew_cover.png?alt=media&token=4845e9ed-ec29-4bb1-9e23-54d39241b097",
   referral:
-    "https://firebasestorage.googleapis.com/v0/b/charmify-e7acc.firebasestorage.app/o/bot%2Fphoto_2025-04-14%2012.30.57%20(1).jpeg?alt=media&token=b9438ff2-683f-4ae0-a76d-ba5696354727",
+    "https://firebasestorage.googleapis.com/v0/b/charmify-e7acc.firebasestorage.app/o/bot%2Fcover_for_refferal.png?alt=media&token=abc3b4d9-94a6-4b8c-b37a-44c4da11a41d",
 };
 
 bot.start(async (ctx) => {
