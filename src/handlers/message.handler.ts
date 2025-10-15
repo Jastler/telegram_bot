@@ -1,19 +1,11 @@
 import { Context } from "telegraf";
-import { env } from "../config/env";
-import { unknownMessageReply, SupportedLanguage } from "../../translations";
+import { env } from "../config/env.js";
+import { unknownMessageReply, SupportedLanguage } from "../translations.js";
 
 /**
  * Обробник невідомих текстових повідомлень
  */
-export async function handleUnknownMessage(ctx: Context): Promise<void> {
-  const text = (ctx.message as any)?.text;
-  const payment = (ctx.message as any)?.successful_payment;
-
-  // Ігноруємо команди та платежі
-  if (!text || text.startsWith("/") || payment) {
-    return;
-  }
-
+export async function handleText(ctx: Context): Promise<void> {
   // Визначення мови користувача
   const userLang =
     (ctx.from?.language_code?.split("-")[0] as SupportedLanguage) || "en";

@@ -1,5 +1,7 @@
-export { handleStart } from "./start.command";
-export { handleLaunch } from "./launch.command";
-export { handlePing } from "./ping.command";
-export { handleBroadcast } from "./broadcast.command";
-export { handlePromo } from "./promo.command";
+export { handleStart } from "./start.command.js";
+export { handleLaunch } from "./launch.command.js";
+export { handlePing } from "./ping.command.js";
+export { handleBroadcast } from "./broadcast.command.js";
+export { handlePromo } from "./promo.command.js";
+export { handleAuth } from "./auth.command.js";
+export { handleHelp } from "./help.command.js";

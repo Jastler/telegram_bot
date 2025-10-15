@@ -7,9 +7,9 @@ import {
 import { env } from "../config/env";
 import {
   FIRESTORE_COLLECTIONS,
-  createTelegramUid,
   REFERRAL_PREFIX,
   AD_PREFIX,
+  UID_PREFIX,
 } from "../constants/firebase";
 import {
   TelegramUser,
@@ -20,6 +20,13 @@ import {
 
 const db = getFirestore();
 const auth = getAuth();
+
+/**
+ * Генерація UID для Telegram користувача
+ */
+export function createTelegramUid(telegramId: number): string {
+  return `${UID_PREFIX}${telegramId}`;
+}
 
 /**
  * Парсинг параметра start

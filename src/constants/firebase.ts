@@ -11,13 +11,6 @@ export const REFERRAL_PREFIX = "ref_";
 export const AD_PREFIX = "ad_";
 
 /**
- * Генерація UID для Telegram користувача
- */
-export function createTelegramUid(telegramId: number): string {
-  return `${UID_PREFIX}${telegramId}`;
-}
-
-/**
  * Вилучення Telegram ID з UID
  */
 export function extractTelegramId(uid: string): string {

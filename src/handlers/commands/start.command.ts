@@ -7,7 +7,7 @@ import {
   referralButtonText,
   defaultButtonText,
   SupportedLanguage,
-} from "../../../translations";
+} from "../../translations.js";
 import { env } from "../../config/env";
 
 const IMAGES = {
