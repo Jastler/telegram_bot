@@ -1,20 +1,21 @@
 {
   "compilerOptions": {
     /* вихідні файли */
-    "outDir": "dist",                 // куди класти .js після компіляції
-    "rootDir": ".",                   // звідки брати .ts
+    "outDir": "dist", // куди класти .js після компіляції
+    "rootDir": ".", // звідки брати .ts
 
     /* модуль + таргет */
-    "module": "commonjs",             // щоб запускати звичайним node
-    "target": "es2020",               // досить для Node 18+
-    "esModuleInterop": true,          // імпорт пакетів типу `import express from "express"`
+    "module": "commonjs", // щоб запускати звичайним node
+    "target": "es2020", // досить для Node 18+
+    "esModuleInterop": true, // імпорт пакетів типу `import express from "express"`
 
     /* решта зручностей */
-    "sourceMap": true,                // мапи для дебагу
-    "resolveJsonModule": true,        // імпорт .json, якщо треба
-    "strict": true,                   // суворий режим (можеш вимкнути)
-    "skipLibCheck": true              // швидший build
+    "sourceMap": true, // мапи для дебагу
+    "resolveJsonModule": true, // імпорт .json, якщо треба
+    "strict": false, // вимкнено для швидшої розробки
+    "skipLibCheck": true, // швидший build
+    "moduleResolution": "node" // розв'язання модулів для Firebase Admin
   },
-  "include": ["**/*.ts"],
-  "exclude": ["dist", "node_modules"]
+  "include": ["src/**/*.ts", "translations.ts"],
+  "exclude": ["dist", "node_modules", "bot.ts"]
 }
