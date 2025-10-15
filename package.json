@@ -1,6 +1,7 @@
 {
-  "name": "telegram-bot",
+  "name": "claudia-bot",
   "version": "1.0.0",
+  "description": "Telegram бот ClaudiaBot",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -8,23 +9,24 @@
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts"
   },
+  "keywords": [
+    "telegram",
+    "bot"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
-    "axios": "^1.9.0",
+    "@types/express": "^5.0.3",
+    "axios": "^1.12.2",
     "bottleneck": "^2.19.5",
-    "concurrently": "^9.1.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^4.21.2",
-    "firebase-admin": "^13.3.0",
-    "grammy": "^1.35.1",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "firebase-admin": "^13.5.0",
     "telegraf": "^4.16.3"
   },
   "devDependencies": {
-    "@types/node": "^22.13.14",
-    "nodemon": "^3.1.9",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.2"
+    "@types/node": "^24.7.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
   }
 }
