@@ -8,7 +8,6 @@ import {
   handlePing,
   handleBroadcast,
   handlePromo,
-  handleAuth,
   handleHelp,
 } from "./handlers/commands/index.js";
 import {
@@ -24,38 +23,35 @@ export function createBot(): Telegraf {
 
   // ==================== КОМАНДИ ====================
 
-  // /start - Головна команда, реєстрація/автентифікація користувача
+  // /start - Main command, user registration/authentication
   bot.start(handleStart);
 
-  // /auth - Отримання Custom Token
-  bot.command("auth", handleAuth);
-
-  // /help - Довідка
+  // /help - Help
   bot.help(handleHelp);
 
-  // /launch - Запуск Mini App
+  // /launch - Launch Mini App
   bot.command("launch", handleLaunch);
 
-  // /ping - Перевірка роботи бота
+  // /ping - Check bot status
   bot.command("ping", handlePing);
 
-  // /broadcast - Розсилка всім користувачам (тільки адмін)
+  // /broadcast - Broadcast to all users (admin only)
   bot.command("broadcast", (ctx) => handleBroadcast(ctx, bot));
 
-  // /promo - Розсилка конкретним користувачам (тільки адмін)
+  // /promo - Send to specific users (admin only)
   bot.command("promo", (ctx) => handlePromo(ctx, bot));
 
-  // ==================== ПЛАТЕЖІ ====================
+  // ==================== PAYMENTS ====================
 
-  // Обробка pre-checkout query
+  // Handle pre-checkout query
   bot.on("pre_checkout_query", handlePreCheckoutQuery);
 
-  // Обробка успішних платежів
+  // Handle successful payments
   bot.on("message", handleSuccessfulPayment);
 
-  // ==================== НЕВІДОМІ ПОВІДОМЛЕННЯ ====================
+  // ==================== UNKNOWN MESSAGES ====================
 
-  // Обробка текстових повідомлень (не команд)
+  // Handle text messages (non-commands)
   bot.on(message("text"), handleText);
 
   return bot;

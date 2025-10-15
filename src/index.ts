@@ -1,11 +1,11 @@
 import { validateEnv } from "./config/env.js";
 import { createBot, launchBot } from "./bot.js";
 
-// ==================== ІНІЦІАЛІЗАЦІЯ ====================
+// ==================== INITIALIZATION ====================
 
-// Валідація змінних оточення
+// Validate environment variables
 validateEnv();
 
-// Створення та запуск бота
+// Create and launch bot
 const bot = createBot();
 launchBot(bot);

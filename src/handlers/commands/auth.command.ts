@@ -12,7 +12,7 @@ export async function handleAuth(ctx: Context): Promise<void> {
   try {
     const telegramUser = ctx.from;
     if (!telegramUser) {
-      await ctx.reply("❌ Немає даних користувача");
+      await ctx.reply("❌ No user data available");
       return;
     }
 
@@ -20,15 +20,15 @@ export async function handleAuth(ctx: Context): Promise<void> {
     const customToken = await generateCustomToken(uid);
 
     await ctx.reply(
-      `🔑 Ваш Custom Token готовий!\n\n` +
+      `🔑 Your Custom Token is ready!\n\n` +
         `Token: \`${customToken}\`\n\n` +
-        `⚠️ Токен дійсний 1 годину. Не діліться ним з іншими.`,
+        `⚠️ Token is valid for 1 hour. Do not share it with others.`,
       { parse_mode: "Markdown" }
     );
 
-    console.log(`✅ Custom Token видано користувачу: ${uid}`);
+    console.log(`✅ Custom Token issued to user: ${uid}`);
   } catch (error) {
-    console.error("❌ Помилка генерації токена:", error);
-    await ctx.reply("❌ Помилка генерації токена. Спробуйте ще раз пізніше.");
+    console.error("❌ Token generation error:", error);
+    await ctx.reply("❌ Token generation error. Please try again later.");
   }
 }

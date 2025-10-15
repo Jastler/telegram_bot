@@ -3,5 +3,4 @@ export { handleLaunch } from "./launch.command.js";
 export { handlePing } from "./ping.command.js";
 export { handleBroadcast } from "./broadcast.command.js";
 export { handlePromo } from "./promo.command.js";
-export { handleAuth } from "./auth.command.js";
 export { handleHelp } from "./help.command.js";

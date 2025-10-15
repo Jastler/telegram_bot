@@ -6,23 +6,21 @@ import { env } from "../../config/env.js";
  */
 export async function handleHelp(ctx: Context): Promise<void> {
   const helpText = `
-🤖 **Доступні команди:**
+🤖 **Available Commands:**
 
-/start - Запуск бота та реєстрація
-/launch - Відкрити Mini App
-/auth - Отримати Custom Token для автентифікації
-/ping - Перевірка роботи бота
-/help - Ця довідка
+/start - Start bot and registration
+/launch - Open Mini App
+/ping - Check bot status
+/help - This help
 
-🔗 **Реферальна система:**
-Використовуйте посилання формату:
-\`https://t.me/YourBot?start=ref_123456789\`
+🔗 **Referral System:**
+Use links in format:
+\`https://t.me/AIcharmify_bot?start=ref_123456789\`
 
-💰 **Бонуси:**
-• Новий користувач: ${env.welcomeBonusStars} зірок
-• За реферала: +${env.referralBonusStars} зірок
+💰 **Bonuses:**
+• New user: ${env.welcomeBonusStars} stars
+• For referral: +${env.referralBonusStars} stars
 
-📱 **Mini App:** ${env.miniAppUrl}
 `;
 
   await ctx.reply(helpText, { parse_mode: "Markdown" });
