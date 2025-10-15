@@ -27,7 +27,7 @@ export async function handlePromo(ctx: Context, bot: Telegraf): Promise<void> {
   const caption = cap.join("|");
   const ids = idsRaw
     .split(",")
-    .map((s) => s.trim())
+    .map((s: string) => s.trim())
     .filter(Boolean);
 
   let ok = 0,

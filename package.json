@@ -2,8 +2,7 @@
   "name": "telegram-bot",
   "version": "1.0.0",
   "main": "dist/index.js",
-  "type": "commonjs",
-  "license": "MIT",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
