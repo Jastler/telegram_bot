@@ -1,4 +1,6 @@
 import { Context } from "telegraf";
+import { getFirestore, Timestamp } from "../../config/firebase.config";
+import { FIRESTORE_COLLECTIONS } from "../../constants/firebase";
 
 export async function handleSubscription(ctx: Context): Promise<void> {
   const title = "Premium Subscription";
@@ -25,7 +27,7 @@ export async function handleSubscription(ctx: Context): Promise<void> {
       subscription_period: 30 * 24 * 60 * 60, // 30 days
     } as any);
 
-    await ctx.reply(text, {
+    const sent = await ctx.reply(text, {
       parse_mode: "Markdown",
       reply_markup: {
         inline_keyboard: [
@@ -33,6 +35,33 @@ export async function handleSubscription(ctx: Context): Promise<void> {
         ],
       },
     });
+
+    // Збережемо повідомлення для подальшого редагування після успішної оплати
+    try {
+      const db = getFirestore();
+      const userId = `telegram:${ctx.from?.id}`;
+      const messageId = (sent as any)?.message_id;
+      const chatId = (sent as any)?.chat?.id ?? ctx.chat?.id;
+
+      if (messageId && chatId && userId) {
+        await db
+          .collection(FIRESTORE_COLLECTIONS.USERS)
+          .doc(userId)
+          .set(
+            {
+              lastSubscriptionMessage: {
+                chatId,
+                messageId,
+                savedAt: Timestamp.now(),
+              },
+              updatedAt: Timestamp.now(),
+            },
+            { merge: true }
+          );
+      }
+    } catch (e) {
+      // ігноруємо помилки збереження
+    }
   } catch (err) {
     await ctx.reply(
       text +

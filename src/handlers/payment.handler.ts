@@ -32,7 +32,6 @@ export async function handleSuccessfulPayment(
   try {
     // Підписка (Telegram Stars, щомісячно)
     if (payload.includes("subscription_")) {
-
       // try {
       //   await axios.post(
       //     env.subscriptionWebhook,
@@ -65,6 +64,27 @@ export async function handleSuccessfulPayment(
       await updateUserClaims(userId, { subscription: "active" });
 
       console.log("✅ Підписка активована та записана у Firestore:", userId);
+
+      // Якщо є збережене повідомлення з кнопкою, відредагувати його
+      try {
+        const snap = await userRef.get();
+        const data = snap.data() as any;
+        const msg = data?.lastSubscriptionMessage;
+        if (msg?.chatId && msg?.messageId) {
+          await ctx.telegram.editMessageText(
+            msg.chatId,
+            msg.messageId,
+            undefined,
+            "✅ Subscription is active. Enjoy unlimited access!",
+            {
+              parse_mode: "Markdown",
+              reply_markup: { inline_keyboard: [] },
+            } as any
+          );
+        }
+      } catch (e) {
+        console.warn("⚠️ Не вдалося відредагувати повідомлення підписки:", e);
+      }
     }
 
     // Покупка зірок (одноразова)
