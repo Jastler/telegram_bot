@@ -10,6 +10,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
 
 /start - Start bot and registration
 /launch - Open Mini App
+/subscription - Premium subscription (1 Star/month)
 /ping - Check bot status
 /help - This help
 
@@ -20,6 +21,12 @@ Use links in format:
 💰 **Bonuses:**
 • New user: ${env.welcomeBonusStars} stars
 • For referral: +${env.referralBonusStars} stars
+
+⭐ **Premium Features:**
+• Unlimited AI conversations
+• AI image generation
+• Priority support
+• Advanced features
 
 `;
 
