@@ -1,10 +1,6 @@
 import { Context } from "telegraf";
 import axios from "axios";
 import { env } from "../config/env";
-import {
-  createTelegramUid,
-  createSubscription,
-} from "../services/user.service";
 
 /**
  * Обробник pre-checkout query
@@ -27,71 +23,17 @@ export async function handleSuccessfulPayment(
   }
 
   const payload = payment.invoice_payload;
-  const telegramUserId = ctx.from?.id;
-  const userId = `telegram:${telegramUserId}`;
-  const firebaseUserId = createTelegramUid(telegramUserId!);
+  const userId = `telegram:${ctx.from?.id}`;
 
   try {
-    // Обробка підписки (Bot subscriptions)
+    // Обробка підписки
     if (payload.includes("subscription_")) {
-      // Парсимо payload для отримання даних підписки
-      const payloadParts = payload.split("_");
-      const subscriptionType = payloadParts[1]; // "premium"
-      const telegramUserId = payloadParts[2]; // ID користувача
-
-      // Для Bot subscriptions chargeId це invoice_slug з Telegram
-      const chargeId =
-        payment.invoice_slug ||
-        payment.provider_charge_id ||
-        `charge_${Date.now()}`;
-
-      // Створюємо підписку в Firestore
-      const subscriptionId = `sub_${telegramUserId}_${Date.now()}`;
-
-      await createSubscription({
-        userId: firebaseUserId,
-        subscriptionId,
-        chargeId,
-        amount: payment.total_amount, // кількість зірок
-        period: 30 * 24 * 60 * 60, // 30 днів в секундах (обов'язково для Bot subscriptions)
-      });
-
-      // Відправляємо webhook (якщо потрібно для зовнішніх систем)
       await axios.post(
         env.subscriptionWebhook,
-        {
-          userId,
-          payload,
-          subscriptionId,
-          chargeId,
-          invoiceSlug: payment.invoice_slug,
-          totalAmount: payment.total_amount,
-          currency: payment.currency,
-        },
+        { userId, payload },
         { headers: { "x-api-key": env.subscriptionApiKey } }
       );
-
-      console.log("✅ Bot subscription створена в Firestore:", {
-        userId: firebaseUserId,
-        subscriptionId,
-        chargeId,
-        invoiceSlug: payment.invoice_slug,
-        totalAmount: payment.total_amount,
-      });
-
-      // Відправляємо підтвердження користувачу
-      await ctx.reply(
-        "🎉 **Congratulations!** Your premium subscription is now active!\n\n" +
-          "✨ You now have access to:\n" +
-          "• Unlimited AI conversations\n" +
-          "• AI image generation\n" +
-          "• Priority support\n" +
-          "• All premium features\n\n" +
-          "Your subscription will automatically renew monthly. Enjoy! 🌟\n\n" +
-          `📋 **Subscription ID:** \`${subscriptionId}\`\n` +
-          `💰 **Amount:** ${payment.total_amount} ${payment.currency}`,
-        { parse_mode: "Markdown" }
-      );
+      console.log("✅ Підписка оброблена:", userId);
     }
     // Обробка покупки зірок
     else if (payload.includes("stars_")) {
@@ -115,13 +57,6 @@ export async function handleSuccessfulPayment(
       date: new Date().toISOString(),
       type: payload.includes("stars_") ? "stars_purchase" : "subscription",
     });
-
-    // Відправляємо повідомлення про помилку користувачу
-    await ctx.reply(
-      "❌ Sorry, there was an issue processing your payment. " +
-        "Please contact support if the problem persists.",
-      { parse_mode: "Markdown" }
-    );
   }
 
   return next();

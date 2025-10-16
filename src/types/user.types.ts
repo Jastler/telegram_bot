@@ -47,19 +47,6 @@ export interface FirestoreUser {
     incoming: number[];
     outgoing: number[];
   };
-
-  // Підписка
-  subscription?: {
-    id: string;
-    type: 'premium';
-    status: 'active' | 'canceled' | 'expired';
-    startDate: Timestamp;
-    endDate: Timestamp;
-    nextBillingDate?: Timestamp;
-    amount: number; // в зірочках
-    period: number; // в секундах
-    chargeId?: string; // ID з Telegram для керування
-  };
 }
 
 /**
@@ -77,25 +64,4 @@ export interface CreateUserResult {
 export interface StartParam {
   referrerId: string | null;
   adCode: string | null;
-}
-
-/**
- * Дані для створення підписки
- */
-export interface CreateSubscriptionData {
-  userId: string;
-  subscriptionId: string;
-  chargeId: string;
-  amount: number;
-  period: number;
-}
-
-/**
- * Дані для оновлення підписки
- */
-export interface UpdateSubscriptionData {
-  subscriptionId: string;
-  status?: 'active' | 'canceled' | 'expired';
-  endDate?: Timestamp;
-  nextBillingDate?: Timestamp;
 }
