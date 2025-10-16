@@ -26,17 +26,7 @@ export async function handleSuccessfulPayment(
   const userId = `telegram:${ctx.from?.id}`;
 
   try {
-    // Обробка підписки
-    if (payload.includes("subscription_")) {
-      await axios.post(
-        env.subscriptionWebhook,
-        { userId, payload },
-        { headers: { "x-api-key": env.subscriptionApiKey } }
-      );
-      console.log("✅ Підписка оброблена:", userId);
-    }
-    // Обробка покупки зірок
-    else if (payload.includes("stars_")) {
+    if (payload.includes("stars_")) {
       const parts = payload.split("_");
       const amount = parts[1] ?? "0";
 

@@ -9,6 +9,7 @@ import {
   handleBroadcast,
   handlePromo,
   handleHelp,
+  handleSubscription,
 } from "./handlers/commands/index.js";
 import {
   handlePreCheckoutQuery,
@@ -40,6 +41,9 @@ export function createBot(): Telegraf {
 
   // /promo - Send to specific users (admin only)
   bot.command("promo", (ctx) => handlePromo(ctx, bot));
+
+  // /subscription - Show subscription info and link
+  bot.command("subscription", handleSubscription);
 
   // ==================== PAYMENTS ====================
 
