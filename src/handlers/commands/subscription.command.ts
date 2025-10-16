@@ -1,9 +1,6 @@
 import { Context } from "telegraf";
 import { env } from "../../config/env.js";
 
-/**
- * Обробник команди /subscription
- */
 export async function handleSubscription(ctx: Context): Promise<void> {
   try {
     const subscriptionText = `
@@ -84,13 +81,19 @@ export async function handleSubscriptionCallback(ctx: Context): Promise<void> {
  */
 async function handleSubscribePremium(ctx: Context): Promise<void> {
   try {
-    // Створюємо інвойс для підписки
+    const userId = ctx.from?.id;
+    if (!userId) {
+      await ctx.answerCbQuery("❌ Unable to identify user");
+      return;
+    }
+
+    // Створюємо інвойс для Telegram Stars
     const invoice = {
       title: "Premium Subscription",
       description:
         "Unlimited AI conversations, image generation, and premium features",
-      payload: `subscription_premium_${ctx.from?.id}`,
-      provider_token: env.botToken, // Використовуємо bot token як provider token
+      payload: `subscription_premium_${userId}`,
+      provider_token: "", // Для Telegram Stars можна залишити порожнім
       currency: "XTR", // Telegram Stars
       prices: [
         {
@@ -98,13 +101,17 @@ async function handleSubscribePremium(ctx: Context): Promise<void> {
           amount: 1, // 1 Telegram Star
         },
       ],
-      subscription_period: 30 * 24 * 60 * 60, // 30 днів в секундах
-      recurring: true,
     };
 
+    await ctx.answerCbQuery();
     await ctx.replyWithInvoice(invoice);
   } catch (error) {
     console.error("❌ Помилка створення інвойсу:", error);
+    console.error("❌ Деталі помилки:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: ctx.from?.id,
+    });
     await ctx.answerCbQuery(
       "❌ Error creating subscription. Please try again."
     );

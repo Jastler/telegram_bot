@@ -16,6 +16,8 @@ import {
   FirestoreUser,
   CreateUserResult,
   StartParam,
+  CreateSubscriptionData,
+  UpdateSubscriptionData,
 } from "../types/user.types";
 
 const db = getFirestore();
@@ -338,6 +340,167 @@ export async function updateUser(
     console.log("✅ Користувач оновлено:", uid);
   } catch (error) {
     console.error("❌ Помилка оновлення користувача:", error);
+    throw error;
+  }
+}
+
+/**
+ * Створення підписки для користувача
+ */
+export async function createSubscription(
+  data: CreateSubscriptionData
+): Promise<void> {
+  try {
+    const now = Timestamp.now();
+    const endDate = new Date(now.toDate().getTime() + data.period * 1000);
+    const nextBillingDate = new Date(endDate.getTime());
+
+    const subscriptionData = {
+      id: data.subscriptionId,
+      type: "premium" as const,
+      status: "active" as const,
+      startDate: now,
+      endDate: Timestamp.fromDate(endDate),
+      nextBillingDate: Timestamp.fromDate(nextBillingDate),
+      amount: data.amount,
+      period: data.period,
+      chargeId: data.chargeId,
+    };
+
+    await db.collection(FIRESTORE_COLLECTIONS.USERS).doc(data.userId).update({
+      subscription: subscriptionData,
+      updatedAt: Timestamp.now(),
+    });
+
+    // Оновлення Custom Claims
+    await updateUserClaims(data.userId, {
+      subscription: "premium",
+      stars: (await getUser(data.userId))?.stars?.total || 0,
+    });
+
+    console.log("✅ Підписку створено:", {
+      userId: data.userId,
+      subscriptionId: data.subscriptionId,
+      endDate: endDate.toISOString(),
+    });
+  } catch (error) {
+    console.error("❌ Помилка створення підписки:", error);
+    throw error;
+  }
+}
+
+/**
+ * Оновлення підписки
+ */
+export async function updateSubscription(
+  userId: string,
+  data: UpdateSubscriptionData
+): Promise<void> {
+  try {
+    const userDoc = await db
+      .collection(FIRESTORE_COLLECTIONS.USERS)
+      .doc(userId)
+      .get();
+
+    if (!userDoc.exists) {
+      throw new Error("Користувач не знайдений");
+    }
+
+    const userData = userDoc.data() as FirestoreUser;
+    const currentSubscription = userData.subscription;
+
+    if (!currentSubscription) {
+      throw new Error("Підписка не знайдена");
+    }
+
+    const updatedSubscription = {
+      ...currentSubscription,
+      ...data,
+      id: currentSubscription.id, // Зберігаємо оригінальний ID
+    };
+
+    await db.collection(FIRESTORE_COLLECTIONS.USERS).doc(userId).update({
+      subscription: updatedSubscription,
+      updatedAt: Timestamp.now(),
+    });
+
+    // Оновлення Custom Claims
+    const claimsSubscription = data.status === "active" ? "premium" : null;
+    await updateUserClaims(userId, {
+      subscription: claimsSubscription,
+      stars: userData.stars?.total || 0,
+    });
+
+    console.log("✅ Підписку оновлено:", {
+      userId,
+      subscriptionId: data.subscriptionId,
+      status: data.status,
+    });
+  } catch (error) {
+    console.error("❌ Помилка оновлення підписки:", error);
+    throw error;
+  }
+}
+
+/**
+ * Отримання активної підписки користувача
+ */
+export async function getActiveSubscription(
+  userId: string
+): Promise<FirestoreUser["subscription"] | null> {
+  try {
+    const userData = await getUser(userId);
+
+    if (!userData?.subscription) {
+      return null;
+    }
+
+    const now = new Date();
+    const endDate = userData.subscription.endDate.toDate();
+
+    // Перевіряємо чи підписка активна
+    if (userData.subscription.status === "active" && endDate > now) {
+      return userData.subscription;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("❌ Помилка отримання підписки:", error);
+    return null;
+  }
+}
+
+/**
+ * Продовження підписки (автоматичне оновлення)
+ */
+export async function renewSubscription(userId: string): Promise<void> {
+  try {
+    const userData = await getUser(userId);
+
+    if (!userData?.subscription) {
+      throw new Error("Підписка не знайдена");
+    }
+
+    const currentSubscription = userData.subscription;
+    const newEndDate = new Date(
+      currentSubscription.endDate.toDate().getTime() +
+        currentSubscription.period * 1000
+    );
+    const newNextBillingDate = new Date(newEndDate.getTime());
+
+    await updateSubscription(userId, {
+      subscriptionId: currentSubscription.id,
+      status: "active",
+      endDate: Timestamp.fromDate(newEndDate),
+      nextBillingDate: Timestamp.fromDate(newNextBillingDate),
+    });
+
+    console.log("✅ Підписку продовжено:", {
+      userId,
+      newEndDate: newEndDate.toISOString(),
+    });
+  } catch (error) {
+    console.error("❌ Помилка продовження підписки:", error);
     throw error;
   }
 }
