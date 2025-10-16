@@ -1,6 +1,5 @@
 import { Context } from "telegraf";
 import { env } from "../../config/env.js";
-import { telegramPayments } from "../../services/telegram-payments.service.js";
 
 // Додаємо валідацію env при імпорті
 try {
@@ -105,55 +104,32 @@ async function handleSubscribePremium(ctx: Context): Promise<void> {
 
     await ctx.answerCbQuery();
 
-    try {
-      // Створюємо Bot subscription через правильний API
-      const invoiceLink = await telegramPayments.createBotSubscriptionInvoice(
-        "Premium Subscription",
+    // Створюємо Bot subscription інвойс (правильний формат)
+    const invoice = {
+      title: "Premium Subscription",
+      description:
         "Unlimited AI conversations, image generation, and premium features",
-        `subscription_premium_${userId}`,
-        1, // 1 Telegram Star
-        userId
-      );
+      payload: `subscription_premium_${userId}`,
+      provider_token: "", // Для Telegram Stars
+      currency: "XTR", // Telegram Stars
+      prices: [
+        {
+          label: "Premium Subscription (1 month)",
+          amount: 1, // 1 Telegram Star
+        },
+      ],
+      // Обов'язкові параметри для Bot subscription
+      subscription_period: 30 * 24 * 60 * 60, // 30 днів в секундах
+      recurring: true,
+    };
 
-      console.log("📋 Bot subscription інвойс створено:", invoiceLink);
+    console.log("📋 Bot subscription інвойс створено:", invoice);
 
-      // Відправляємо посилання користувачу
-      await ctx.reply(
-        "🌟 **Premium Subscription**\n\n" +
-          "Click the link below to subscribe:\n\n" +
-          `[Subscribe for 1 Star/month](${invoiceLink})\n\n` +
-          "✨ **What you get:**\n" +
-          "• Unlimited AI conversations\n" +
-          "• AI image generation\n" +
-          "• Priority support\n" +
-          "• All premium features\n\n" +
-          "*Automatic monthly renewal*",
-        { parse_mode: "Markdown" }
-      );
+    // Використовуємо replyWithInvoice - Telegram автоматично обробить як Bot subscription
+    // через наявність subscription_period та recurring
+    await ctx.replyWithInvoice(invoice);
 
-      console.log("✅ Bot subscription посилання відправлено успішно");
-    } catch (apiError) {
-      console.error("❌ Помилка API Telegram:", apiError);
-
-      // Fallback до звичайного інвойсу
-      const fallbackInvoice = {
-        title: "Premium Subscription",
-        description:
-          "Unlimited AI conversations, image generation, and premium features",
-        payload: `subscription_premium_${userId}`,
-        provider_token: "",
-        currency: "XTR",
-        prices: [
-          {
-            label: "Premium Subscription (1 month)",
-            amount: 1,
-          },
-        ],
-      };
-
-      await ctx.replyWithInvoice(fallbackInvoice);
-      console.log("✅ Fallback інвойс відправлено");
-    }
+    console.log("✅ Bot subscription інвойс відправлено успішно");
   } catch (error) {
     console.error("❌ Помилка створення інвойсу:", error);
     console.error("❌ Деталі помилки:", {
