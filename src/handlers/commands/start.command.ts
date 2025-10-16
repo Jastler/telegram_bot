@@ -9,6 +9,7 @@ import {
   SupportedLanguage,
 } from "../../translations.js";
 import { env } from "../../config/env";
+import { handleSubscription } from "./subscription.command.js";
 
 const IMAGES = {
   default:
@@ -68,6 +69,12 @@ export async function handleStart(ctx: Context): Promise<void> {
       isNewUser,
       hasToken: !!customToken,
     });
+
+    // Якщо start-параметр вказує на інвойс підписки — показати одразу підписку
+    if (startPayload === "invoice-Claudia-subscription") {
+      await handleSubscription(ctx);
+      return; // не надсилаємо стандартний welcome
+    }
 
     // Вибір зображення
     const image = isReferral ? IMAGES.referral : IMAGES.default;
