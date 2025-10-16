@@ -1,5 +1,6 @@
 import { Context } from "telegraf";
 import { env } from "../../config/env.js";
+import { telegramApi } from "../../services/telegram-api.service.js";
 
 // Додаємо валідацію env при імпорті
 try {
@@ -104,32 +105,39 @@ async function handleSubscribePremium(ctx: Context): Promise<void> {
 
     await ctx.answerCbQuery();
 
-    // Створюємо Bot subscription інвойс (правильний формат)
-    const invoice = {
-      title: "Premium Subscription",
-      description:
+    try {
+      // Використовуємо прямий API виклик для Bot subscription
+      const result = await telegramApi.createBotSubscriptionInvoice(
+        userId,
+        "Premium Subscription",
         "Unlimited AI conversations, image generation, and premium features",
-      payload: `subscription_premium_${userId}`,
-      provider_token: "", // Для Telegram Stars
-      currency: "XTR", // Telegram Stars
-      prices: [
-        {
-          label: "Premium Subscription (1 month)",
-          amount: 1, // 1 Telegram Star
-        },
-      ],
-      // Обов'язкові параметри для Bot subscription
-      subscription_period: 30 * 24 * 60 * 60, // 30 днів в секундах
-      recurring: true,
-    };
+        `subscription_premium_${userId}`,
+        1 // 1 Telegram Star
+      );
 
-    console.log("📋 Bot subscription інвойс створено:", invoice);
+      console.log("✅ Bot subscription інвойс відправлено через API:", result);
+    } catch (apiError) {
+      console.error("❌ Помилка API Telegram:", apiError);
 
-    // Використовуємо replyWithInvoice - Telegram автоматично обробить як Bot subscription
-    // через наявність subscription_period та recurring
-    await ctx.replyWithInvoice(invoice);
+      // Fallback до звичайного інвойсу через Telegraf
+      const fallbackInvoice = {
+        title: "Premium Subscription",
+        description:
+          "Unlimited AI conversations, image generation, and premium features",
+        payload: `subscription_premium_${userId}`,
+        provider_token: "",
+        currency: "XTR",
+        prices: [
+          {
+            label: "Premium Subscription (1 month)",
+            amount: 1,
+          },
+        ],
+      };
 
-    console.log("✅ Bot subscription інвойс відправлено успішно");
+      await ctx.replyWithInvoice(fallbackInvoice);
+      console.log("✅ Fallback інвойс відправлено через Telegraf");
+    }
   } catch (error) {
     console.error("❌ Помилка створення інвойсу:", error);
     console.error("❌ Деталі помилки:", {
