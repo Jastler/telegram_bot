@@ -47,6 +47,17 @@ export interface FirestoreUser {
     incoming: number[];
     outgoing: number[];
   };
+
+  // Підписка (Telegram Stars)
+  subscription?: {
+    status: "active" | "canceled" | "expired";
+    startedAt: Timestamp;
+    updatedAt: Timestamp;
+    periodSeconds: number;
+    amountStars: number;
+    currency?: "XTR";
+    invoicePayload?: string;
+  };
 }
 
 /**
