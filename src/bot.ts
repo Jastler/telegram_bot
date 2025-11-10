@@ -10,6 +10,7 @@ import {
   handlePromo,
   handleHelp,
   handleSubscription,
+  handleGiftCommand,
 } from "./handlers/commands/index.js";
 import {
   handlePreCheckoutQuery,
@@ -44,6 +45,9 @@ export function createBot(): Telegraf {
 
   // /subscription - Show subscription info and link
   bot.command("subscription", handleSubscription);
+
+  // /gift - Створення інвойсу на подарунок ClaudiaBot
+  bot.command("gift", handleGiftCommand);
 
   // ==================== PAYMENTS ====================
 

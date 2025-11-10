@@ -10,8 +10,15 @@ import {
 } from "../../translations.js";
 import { env } from "../../config/env";
 import { handleSubscription } from "./subscription.command.js";
-import { extractClaudiaGiftId } from "../../constants/payments.js";
+import {
+  CLAUDIA_INVOICE_PREFIX,
+  extractClaudiaGiftId,
+} from "../../constants/payments.js";
 import { rememberClaudiaGiftIntent } from "../../services/payment-intent.service.js";
+import {
+  formatClaudiaGiftPrice,
+  getClaudiaGiftById,
+} from "../../constants/claudia-gifts.js";
 
 const IMAGES = {
   default:
@@ -89,9 +96,59 @@ export async function handleStart(ctx: Context): Promise<void> {
     }
 
     if (claudiaGiftId) {
-      await ctx.reply(
-        "🎁 Підготовка оплати подарунка завершена. Завершіть покупку через надісланий інвойс або ClaudiaBot."
-      );
+      const giftConfig = getClaudiaGiftById(claudiaGiftId);
+      if (!giftConfig) {
+        console.warn("⚠️ Claudia gift is not configured:", claudiaGiftId);
+        await ctx.reply(
+          "❗️ This gift is not configured yet. Please contact the administrator."
+        );
+        return;
+      }
+
+      try {
+        const invoiceLink = await ctx.telegram.createInvoiceLink({
+          title: giftConfig.title,
+          description:
+            giftConfig.description ??
+            "Pay for Claudia's gift here. After successful payment return to ClaudiaBot to receive her reaction.",
+          payload: `${CLAUDIA_INVOICE_PREFIX}${claudiaGiftId}`,
+          currency: "XTR",
+          prices: [
+            {
+              label: giftConfig.title,
+              amount: giftConfig.priceStars,
+            },
+          ],
+        } as any);
+
+        await ctx.reply(
+          `🎁 *${giftConfig.title}*\n` +
+            `💳 *Price:* ${formatClaudiaGiftPrice(giftConfig.priceStars)}\n\n` +
+            "Tap the button to complete the payment. ClaudiaBot will deliver the gift automatically afterwards.",
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text:
+                      giftConfig.buttonLabel ??
+                      `Pay — ${formatClaudiaGiftPrice(giftConfig.priceStars)}`,
+                    url: invoiceLink,
+                  },
+                ],
+              ],
+            },
+          }
+        );
+      } catch (error) {
+        console.error("❌ Failed to create Claudia gift invoice:", error);
+        await ctx.reply(
+          "❌ Failed to create the invoice. Please try again later."
+        );
+      }
+
+      return;
     }
 
     // Вибір зображення
