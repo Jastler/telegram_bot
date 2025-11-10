@@ -19,9 +19,9 @@ export interface TelegramUser {
 export interface FirestoreUser {
   id: number;
   first_name: string;
-  last_name?: string;
-  username?: string;
-  language_code?: string;
+  last_name?: string | null;
+  username?: string | null;
+  language_code?: string | null;
   is_premium?: boolean;
   allows_write_to_pm?: boolean;
 

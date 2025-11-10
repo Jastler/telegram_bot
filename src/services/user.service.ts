@@ -215,9 +215,9 @@ async function handleNewUser(
   const userData: FirestoreUser = {
     id: telegramUser.id,
     first_name: telegramUser.first_name,
-    last_name: telegramUser.last_name,
-    username: telegramUser.username,
-    language_code: telegramUser.language_code,
+    last_name: telegramUser.last_name ?? null,
+    username: telegramUser.username ?? null,
+    language_code: telegramUser.language_code ?? null,
     is_premium: telegramUser.is_premium || false,
     allows_write_to_pm: true,
     createdAt: Timestamp.now(),
