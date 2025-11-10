@@ -4,6 +4,7 @@
 
 export const FIRESTORE_COLLECTIONS = {
   USERS: "users",
+  GIFT_PURCHASES: "giftPurchases",
 } as const;
 
 export const UID_PREFIX = "telegram:";

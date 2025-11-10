@@ -4,6 +4,11 @@ import { env } from "../config/env";
 import { getFirestore, Timestamp } from "../config/firebase.config";
 import { FIRESTORE_COLLECTIONS } from "../constants/firebase";
 import { updateUserClaims } from "../services/user.service";
+import {
+  CLAUDIA_INVOICE_PREFIX,
+  extractClaudiaGiftId,
+} from "../constants/payments.js";
+import { consumeClaudiaGiftIntent } from "../services/payment-intent.service.js";
 
 /**
  * Обробник pre-checkout query
@@ -25,11 +30,44 @@ export async function handleSuccessfulPayment(
     return next();
   }
 
-  const payload = payment.invoice_payload;
+  const payload = payment.invoice_payload ?? "";
   const userId = `telegram:${ctx.from?.id}`;
   const db = getFirestore();
 
   try {
+    // ClaudiaBot gifts
+    if (payload.startsWith(CLAUDIA_INVOICE_PREFIX)) {
+      const giftIdFromPayload = extractClaudiaGiftId(payload);
+      const chatId = ctx.from?.id;
+      const intent = chatId ? consumeClaudiaGiftIntent(chatId) : null;
+      const giftId = giftIdFromPayload ?? intent?.giftId ?? null;
+      const targetChatId = intent?.chatId ?? chatId ?? null;
+      const telegramUserId = ctx.from?.id ?? targetChatId;
+
+      if (!giftId) {
+        console.warn(
+          "⚠️ Не вдалося визначити giftId для ClaudiaBot платежу",
+          payload
+        );
+      } else if (!targetChatId) {
+        console.warn(
+          "⚠️ Не вдалося визначити chatId для ClaudiaBot платежу",
+          payload
+        );
+      } else {
+        await db.collection(FIRESTORE_COLLECTIONS.GIFT_PURCHASES).add({
+          chatId: targetChatId,
+          telegramUserId,
+          giftId,
+          status: "paid",
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+
+        console.log("✅ Claudia gift purchase записано:", targetChatId, giftId);
+      }
+    }
+
     // Підписка (Telegram Stars, щомісячно)
     if (payload.includes("subscription_")) {
       // try {

@@ -10,6 +10,8 @@ import {
 } from "../../translations.js";
 import { env } from "../../config/env";
 import { handleSubscription } from "./subscription.command.js";
+import { extractClaudiaGiftId } from "../../constants/payments.js";
+import { rememberClaudiaGiftIntent } from "../../services/payment-intent.service.js";
 
 const IMAGES = {
   default:
@@ -45,10 +47,20 @@ export async function handleStart(ctx: Context): Promise<void> {
 
     // Вилучення start параметра
     const startPayload = extractStartParam((ctx.message as any)?.text);
+    const claudiaGiftId = startPayload
+      ? extractClaudiaGiftId(startPayload)
+      : null;
     const isReferral = startPayload?.startsWith("ref_");
 
     console.log("📥 Start payload:", startPayload);
     console.log("🔗 Is referral:", isReferral);
+    if (claudiaGiftId) {
+      const chatId = telegramUser.id;
+      rememberClaudiaGiftIntent({ chatId, giftId: claudiaGiftId });
+      console.log(
+        `🎁 Claudia gift purchase initiated: giftId=${claudiaGiftId}, chatId=${chatId}`
+      );
+    }
 
     // Підготовка даних користувача
     const userData: TelegramUser = {
@@ -74,6 +86,12 @@ export async function handleStart(ctx: Context): Promise<void> {
     if (startPayload === "invoice-Claudia-subscription") {
       await handleSubscription(ctx);
       return; // не надсилаємо стандартний welcome
+    }
+
+    if (claudiaGiftId) {
+      await ctx.reply(
+        "🎁 Підготовка оплати подарунка завершена. Завершіть покупку через надісланий інвойс або ClaudiaBot."
+      );
     }
 
     // Вибір зображення
